@@ -4,7 +4,7 @@ from neuroconv.basedatainterface import BaseDataInterface
 from neuroconv.tools.nwb_helpers import make_or_load_nwbfile, get_module
 from neuroconv.tools.roiextractors import add_two_photon_series
 from neuroconv.utils import FilePathType, get_base_schema, get_schema_from_hdmf_class
-from phase3 import nda
+from microns_phase3 import nda
 from pynwb import NWBFile
 from pynwb.ophys import ImagingPlane, TwoPhotonSeries
 

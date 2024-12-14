@@ -1,6 +1,6 @@
 import numpy as np
 from hdmf.backends.hdf5 import H5DataIO
-from phase3 import nda
+from microns_phase3 import nda
 from pynwb import TimeSeries
 from pynwb.behavior import PupilTracking, SpatialSeries, EyeTracking
 
