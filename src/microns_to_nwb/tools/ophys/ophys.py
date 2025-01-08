@@ -1,6 +1,6 @@
 import numpy as np
 from hdmf.backends.hdf5 import H5DataIO
-from phase3 import nda, func
+from microns_phase3 import nda, utils
 from pynwb.base import Images
 from pynwb.image import GrayscaleImage
 from pynwb.ophys import (
@@ -59,7 +59,7 @@ def add_plane_segmentation(field_key, nwb, imaging_plane, image_segmentation):
     )
 
     # Reshape masks
-    masks = func.reshape_masks(mask_pixels, mask_weights, image_height, image_width)
+    masks = utils.reshape_masks(mask_pixels, mask_weights, image_height, image_width)
     # The masks dimensions are (height, width, number of frames), for NWB it should be
     # transposed to (number of frames, width, height)
     masks = masks.transpose(2, 1, 0)

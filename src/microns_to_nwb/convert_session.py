@@ -6,30 +6,30 @@ from warnings import warn
 from neuroconv.tools.data_transfers import automatic_dandi_upload
 from nwbinspector import inspect_nwb
 from nwbinspector.inspector_tools import format_messages, save_report
+
+import pandas as pd
 from tqdm import tqdm
 import datajoint as dj
 
-dj.config["database.host"] = "tutorial-db.datajoint.io"
-dj.config["database.user"] = "microns"
-dj.config["database.password"] = "microns2021"
+dj.config["database.host"]     = "db.datajoint.com"
+dj.config["database.user"]     = "microns"
+dj.config["database.password"] = "microns2023"
 
-from phase3 import nda
+from microns_phase3 import nda
+
 from tools.intervals import add_trials
 from tools.nwb_helpers import start_nwb
 from tools.ophys import add_ophys
-from tools.times import get_stimulus_times, get_frame_times, get_trial_times
-
-from micronsnwbconverter import MICrONSNWBConverter
+from tools.times import resample_flips
 from tools.behavior import find_earliest_timestamp, add_eye_tracking, add_treadmill
+from micronsnwbconverter import MICrONSNWBConverter
 
 
 def convert_session(
     nwbfile_path: str,
     ophys_file_path: str,
-    ophys_timestamps_file_path: str,
     stimulus_movie_file_path: str,
-    stimulus_movie_timestamps_file_path: str,
-    trial_timestamps_file_path: str,
+    dandiset_id: str = None,
     verbose: bool = True,
 ):
     """Wrap converter for parallel execution."""
@@ -44,10 +44,10 @@ def convert_session(
         Video=dict(file_paths=[stimulus_movie_file_path]),
     )
 
-    # Fetch v8 timestamps from the pickle files
-    movie_times = get_stimulus_times(scan_key=scan_key, file_path=stimulus_movie_timestamps_file_path)
-    frame_times = get_frame_times(scan_key=scan_key, file_path=ophys_timestamps_file_path)
-    trial_times = get_trial_times(scan_key=scan_key, file_path=trial_timestamps_file_path)
+    # Fetchv8 timestamps
+    movie_times,_ = resample_flips(scan_key)
+    frame_times = (nda.ScanTimes & scan_key).fetch1('frame_times')
+    trial_times = pd.DataFrame((nda.Trial & scan_key).fetch())
 
     # Shifting times to earliest provided behavioral timestamp when necessary
     pupil_timestamps = (nda.RawManualPupil & scan_key).fetch1("pupil_times")
@@ -122,31 +122,39 @@ def convert_session(
                 levels=["importance", "file_path"],
             ),
         )
-        # Upload nwbfile to DANDI
-        automatic_dandi_upload(
-            dandiset_id="000402",
-            nwb_folder_path=nwbfile_path.parent,
-            cleanup=False,
-        )
-
-        if verbose:
-            print("Cleaning up after successful upload to DANDI ...")
-        Path(ophys_file_path).unlink()
-        Path(stimulus_movie_file_path).unlink()
 
     except Exception as e:
         warn(f"There was an error during conversion. The source files are not removed. The full traceback: {e}")
+    
+    if dandiset_id is not None:
+        try:
+            # Upload nwbfile to DANDI
+            automatic_dandi_upload(
+                dandiset_id=dandiset_id,
+                nwb_folder_path=nwbfile_path.parent,
+                cleanup=False,
+            )
+            if verbose:
+                print("Upload to DANDI successful.")
 
+        except Exception as e:
+            warn(f"There was an error during upload to DANDI.  The source files are not removed.  The full traceback:{e}")
+
+    if verbose:
+        print("Cleaning up ...")
+    Path(ophys_file_path).unlink()
+    Path(stimulus_movie_file_path).unlink()
+
+    
 
 def parallel_convert_sessions(
     num_parallel_jobs: int,
     nwbfile_list: list,
     ophys_file_paths: list,
     stimulus_movie_file_paths: list,
-    stimulus_movie_timestamps_file_path: str,
-    ophys_timestamps_file_path: str,
-    trial_timestamps_file_path: str,
-):
+    dandiset_id: str = None,
+    verbose = False,
+    ):
     with ProcessPoolExecutor(max_workers=num_parallel_jobs) as executor:
         with tqdm(total=len(ophys_file_paths), position=0, leave=False) as progress_bar:
             futures = []
@@ -161,10 +169,8 @@ def parallel_convert_sessions(
                         nwbfile_path=str(nwbfile_path),
                         ophys_file_path=str(ophys_file_path),
                         stimulus_movie_file_path=str(stimulus_movie_file_path),
-                        stimulus_movie_timestamps_file_path=str(stimulus_movie_timestamps_file_path),
-                        ophys_timestamps_file_path=str(ophys_timestamps_file_path),
-                        trial_timestamps_file_path=str(trial_timestamps_file_path),
-                        verbose=False,
+                        dandiset_id = None,
+                        verbose = verbose,
                     )
                 )
             for future in as_completed(futures):
@@ -174,21 +180,14 @@ def parallel_convert_sessions(
 
 if __name__ == "__main__":
     # Source data file paths
-    # The list of file paths to the imaging data
+    # The list of file paths to the imaging data in Catalyst environment
     file_paths = [
         Path("/home/jovyan/microns/functional_scan_17797_4_7_v2.tif"),
     ]
-    # The list of file paths to the stimulus movie files
+    # The list of file paths to the stimulus movie files in Catalyst environment
     movie_file_paths = [
         "/Volumes/t7-ssd/microns/stimulus_17797_4_7_v4.avi",
     ]
-
-    # The file path to the imaging timestamps pickle file (from v8 version)
-    timestamps_file_path = Path(__file__).parent / "CatalystNeuroFileShare/ScanTimes.pkl"
-    # The file path to the movie timestamps pickle file (from v8 version)
-    movie_timestamps_file_path = Path(__file__).parent / "CatalystNeuroFileShare/v8_movie_timestamps.pkl"
-    # The file path to the trials timestamps pickle file (from v8 version)
-    trial_timestamps_file_path = Path(__file__).parent / "CatalystNeuroFileShare/Trial.pkl"
 
     # The file path to the NWB files
     nwb_output_path = Path("/home/jovyan/microns/nwbfiles/")
@@ -203,7 +202,5 @@ if __name__ == "__main__":
         nwbfile_list=nwbfile_list,
         ophys_file_paths=file_paths,
         stimulus_movie_file_paths=movie_file_paths,
-        stimulus_movie_timestamps_file_path=str(movie_timestamps_file_path),
-        ophys_timestamps_file_path=str(timestamps_file_path),
-        trial_timestamps_file_path=str(trial_timestamps_file_path),
+        dandiset_id = None,
     )

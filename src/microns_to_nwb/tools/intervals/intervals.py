@@ -1,4 +1,4 @@
-from phase3 import nda
+from microns_phase3 import nda
 from pynwb.epoch import TimeIntervals
 
 

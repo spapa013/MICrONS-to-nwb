@@ -1,0 +1,17 @@
+finish and test method for sampling generated files match existing files for all constant elements
+purge usernames/passwords from code before git commit
+clean up code in order to only PR targeted and interpretable changes
+add pip install roiextractors==0.5.4, neuroconv==0.2.4, tifffile==2023.7.10, opencv-python-headless==4.8.1.78 to image
+set pip install pynwb==2.5.0
+relaunch pod with new image
+delete generated files and regenerate from public datajoint instance
+test that regenerated files match existing files for all constant elements
+tag repository version
+add a column to RoiResponseSeries table for each plane including unit_id (with nans for non-neuron ROIs)
+    in https://github.com/catalystneuro/MICrONS-to-nwb/blob/main/src/microns_to_nwb/tools/ophys/ophys.py , in the function add_plane_segmentation
+add the deconvolved unit activity as a RoiResponseSeries object (processing->ophys, data_interfaces->response series) that has its name changed to ‘RoiDeconvolvedSeries’
+    in https://github.com/catalystneuro/MICrONS-to-nwb/blob/main/src/microns_to_nwb/tools/ophys/ophys.py , in the function add_roi_response_series.
+tag repository version
+email catalyst neuro to ask about preferences in DANDI versioning and in their github fork PR (if any)
+update DANDI accordingly
+PR github to their fork accordingly
