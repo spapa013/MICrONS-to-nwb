@@ -1,16 +1,38 @@
-version: '3'
+version: '3.9'
 services:
-  jupyterlab:
+  microns-to-nwb:
+    image: ${IMAGE:-registry.atlab.stanford.edu/cajal/microns-to-nwb:latest}
     build:
       context: ..
-      dockerfile: Dockerfile
-      args: 
-        - CLOUDVOLUME_TOKEN=${CLOUDVOLUME_TOKEN}
-    volumes:
-      - ../notebooks:/src/notebooks
-    ports:
-      - "${JUPYTER_HOST:-0.0.0.0}:${JUPYTER_PORT_CONTAINER:-8888}:8888"
+      dockerfile: deploy/Dockerfile
     env_file:
       - .env
-    container_name: microns-to-nwb-jupyterlab
-    entrypoint: /src/microns-to-nwb/deploy/entrypoint.sh
+    environment:
+      - CLOUDVOLUME_TOKEN=${CLOUDVOLUME_TOKEN:-}
+    volumes:
+      - ..:/src/microns-to-nwb
+      - ../notebooks:/src/notebooks
+    working_dir: /src/notebooks
+    ports:
+      - "${JUPYTER_HOST:-0.0.0.0}:${JUPYTER_HOST_PORT:-8888}:8888"
+    entrypoint:
+      - bash
+      - -lc
+      - |
+        set -euxo pipefail
+
+        if [[ -n "${CLOUDVOLUME_TOKEN:-}" ]]; then
+          mkdir -p /root/.cloudvolume/secrets
+          printf '{"token": "%s"}\n' "$CLOUDVOLUME_TOKEN" > /root/.cloudvolume/secrets/cave-secret.json
+        fi
+
+        python -m pip install --no-deps -e /src/microns-to-nwb -c /src/microns-to-nwb/requirements.txt
+
+        exec python -m jupyterlab \
+          --ip=0.0.0.0 \
+          --port=8888 \
+          --no-browser \
+          --allow-root \
+          --ServerApp.token="$JUPYTER_TOKEN"
+
+
