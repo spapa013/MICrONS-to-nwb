@@ -6,7 +6,7 @@ from caveclient.base import AuthException
 
 def get_client():
     try:
-        client = CAVEclient("minnie65_public_v343")
+        client = CAVEclient("minnie65_public")
     except AuthException:
         # Initialize client without datastack name
         client = CAVEclient()
@@ -28,7 +28,7 @@ def get_functional_coreg_table(scan_key):
     client = get_client()
 
     coreg_table = client.materialize.query_table(
-        table="functional_coreg",
+        table="coregistration_manual_v4",
         split_positions=True,
     )
     session = scan_key["session"]
