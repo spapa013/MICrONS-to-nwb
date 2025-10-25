@@ -42,8 +42,8 @@ def add_summary_images(field_key, nwb):
 
 def add_plane_segmentation(field_key, nwb, imaging_plane, image_segmentation):
     image_height, image_width = (nda.Field & field_key).fetch1("px_height", "px_width")
-    mask_pixels, mask_weights, mask_ids, mask_types = (nda.Segmentation * nda.MaskClassification & field_key).fetch(
-        "pixels", "weights", "mask_id", "mask_type", order_by="mask_id"
+    mask_pixels, mask_weights, unit_ids, mask_types = (nda.Segmentation * nda.MaskClassification * nda.ScanUnit.proj('field', 'mask_id') & field_key).fetch(
+        "pixels", "weights", "unit_id", "mask_type", order_by="unit_id"
     )
 
     plane_segmentation = image_segmentation.create_plane_segmentation(
@@ -55,7 +55,7 @@ def add_plane_segmentation(field_key, nwb, imaging_plane, image_segmentation):
         "the notebook that is linked to the dandiset. The structual ids "
         "might not exist for all plane segmentations.",
         imaging_plane=imaging_plane,
-        id=mask_ids,
+        id=unit_ids,
     )
 
     # Reshape masks
@@ -169,9 +169,9 @@ def _get_fluorescence(nwb, fluorescence_name):
 
     return fluorescence
 
-
 def add_roi_response_series(field_key, nwb, plane_segmentation, timestamps):
-    traces_for_each_mask = (nda.Fluorescence() & field_key).fetch("trace", order_by="mask_id")
+    # add Fluorescence traces
+    traces_for_each_mask = (nda.Fluorescence * nda.ScanUnit.proj('field', 'mask_id') & field_key).fetch("trace", order_by="unit_id")
     continuous_traces = np.vstack(traces_for_each_mask).T
 
     roi_table_region = plane_segmentation.create_roi_table_region(
@@ -190,6 +190,35 @@ def add_roi_response_series(field_key, nwb, plane_segmentation, timestamps):
     fluorescence = _get_fluorescence(nwb=nwb, fluorescence_name="Fluorescence")
     fluorescence.add_roi_response_series(roi_response_series)
 
+def add_deconvolved_roi_series(
+    field_key,
+    nwb,
+    plane_segmentation,
+    timestamps,
+):
+    """
+    Store deconvolved per-ROI activity as a RoiResponseSeries linked to the same ROIs
+    as Fluorescence. This mirrors your Fluorescence storage pattern.
+    """
+    traces_for_each_mask = (nda.Activity * nda.ScanUnit.proj('field', 'mask_id') & field_key).fetch("trace", order_by="unit_id")
+    continuous_traces = np.vstack(traces_for_each_mask).T
+
+    roi_table_region = plane_segmentation.create_roi_table_region(
+        region=list(range(continuous_traces.shape[1])), description=f"all rois in field {field_key['field']}"
+    )
+
+    roi_response_series = RoiResponseSeries(
+        name=f"Deconvolved{field_key['field']}",
+        description="Per-ROI deconvolved activity aligned to fluorescence traces.",
+        data=H5DataIO(continuous_traces, compression=True),
+        rois=roi_table_region,
+        timestamps=H5DataIO(timestamps, compression=True),
+        unit="n.a.",
+    )
+
+    # Reuse the Fluorescence container
+    fluorescence = _get_fluorescence(nwb=nwb, fluorescence_name="Fluorescence")
+    fluorescence.add_roi_response_series(roi_response_series)
 
 def add_ophys(scan_key, nwb, timestamps):
     device = nwb.create_device(
