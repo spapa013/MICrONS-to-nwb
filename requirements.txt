@@ -1,8 +1,14 @@
-microns-phase3@ git+https://github.com/cajal/microns_phase3_nda.git@v8
-em_coregistration@ git+https://github.com/AllenInstitute/em_coregistration@phase3#egg=em_coregistration
+numpy==1.24.3
+scipy==1.10.1
+pandas==2.0.2
+scikit-video==1.1.11
+datajoint==0.12.9
+matplotlib==3.7.1
+nglui==2.14.2
+torch==1.9.0
+caveclient==6.2.0
 pynwb==2.5.0
 nwbinspector==0.4.25
-caveclient==5.7.0
 roiextractors==0.5.4
 neuroconv==0.2.4
 tifffile==2023.3.21

@@ -15,5 +15,10 @@ RUN python -m pip install --upgrade pip setuptools wheel && \
 
 # Install dependencies
 WORKDIR /src/microns-to-nwb
+
 COPY requirements.txt /opt/constraints/requirements.txt
+COPY requirements-no-deps.txt /opt/constraints/requirements-no-deps.txt
+
+RUN python -m pip install -r /opt/constraints/requirements-no-deps.txt --no-deps
+
 RUN python -m pip install -r /opt/constraints/requirements.txt
