@@ -17,12 +17,12 @@ dj.config["database.password"] = "microns2023"
 
 from microns_phase3 import nda
 
-from tools.intervals import add_trials
-from tools.nwb_helpers import start_nwb
-from tools.ophys import add_ophys
-from tools.times import resample_flips
-from tools.behavior import find_earliest_timestamp, add_eye_tracking, add_treadmill
-from micronsnwbconverter import MICrONSNWBConverter
+from microns_to_nwb.tools.intervals import add_trials
+from microns_to_nwb.tools.nwb_helpers import start_nwb
+from microns_to_nwb.tools.ophys import add_ophys
+from microns_to_nwb.tools.times import resample_flips
+from microns_to_nwb.tools.behavior import find_earliest_timestamp, add_eye_tracking, add_treadmill
+from microns_to_nwb.micronsnwbconverter import MICrONSNWBConverter
 
 
 def convert_session(

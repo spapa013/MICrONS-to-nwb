@@ -10,8 +10,8 @@ from pynwb.ophys import (
     OpticalChannel,
 )
 
-from tools.cave_client import get_functional_coreg_table
-from tools.nwb_helpers import check_module
+from microns_to_nwb.tools.cave_client import get_functional_coreg_table
+from microns_to_nwb.tools.nwb_helpers import check_module
 
 
 def add_summary_images(field_key, nwb):

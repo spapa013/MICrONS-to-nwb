@@ -1,6 +1,6 @@
 from neuroconv import NWBConverter
 from neuroconv.datainterfaces import VideoInterface
-from ophys import MicronsTiffImagingInterface
+from microns_to_nwb.ophys import MicronsTiffImagingInterface
 
 
 class MICrONSNWBConverter(NWBConverter):

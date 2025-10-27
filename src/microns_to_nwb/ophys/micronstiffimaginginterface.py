@@ -8,7 +8,7 @@ from microns_phase3 import nda
 from pynwb import NWBFile
 from pynwb.ophys import ImagingPlane, TwoPhotonSeries
 
-from ophys.micronstiffimagingextractor import MicronsTiffImagingExtractor
+from .micronstiffimagingextractor import MicronsTiffImagingExtractor
 
 
 class MicronsTiffImagingInterface(BaseDataInterface):
