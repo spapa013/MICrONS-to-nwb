@@ -20,22 +20,24 @@ def get_client():
         client.auth.save_token(token=token, overwrite=True)
 
         # Retry access datastack
-        client = CAVEclient("minnie65_public_v343")
+        client = CAVEclient("minnie65_public")
     return client
 
 
-def get_functional_coreg_table(scan_key):
+def get_functional_coreg_table(field_key):
     client = get_client()
+    materialization_ver = client.materialize.version
 
     coreg_table = client.materialize.query_table(
         table="coregistration_manual_v4",
         split_positions=True,
     )
-    session = scan_key["session"]
-    scan = scan_key["scan_idx"]
+    session = field_key["session"]
+    scan = field_key["scan_idx"]
+    field = field_key["field"]
 
-    coreg_table_for_this_scan = coreg_table[
-        (coreg_table["session"] == int(session)) & (coreg_table["scan_idx"] == int(scan))
+    coreg_table_for_this_field = coreg_table[
+        (coreg_table["session"] == int(session)) & (coreg_table["scan_idx"] == int(scan)) & (coreg_table["field"] == int(field))
     ]
 
-    return coreg_table_for_this_scan
+    return materialization_ver, coreg_table_for_this_field
