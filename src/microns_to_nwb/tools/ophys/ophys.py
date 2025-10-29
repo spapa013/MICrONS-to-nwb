@@ -203,7 +203,7 @@ def add_deconvolved_roi_series(
     )
 
     roi_response_series = RoiResponseSeries(
-        name=f"Deconvolved{field_key['field']}",
+        name=f"DeconvolvedActivity{field_key['field']}",
         description="Per-ROI deconvolved activity aligned to fluorescence traces.",
         data=H5DataIO(continuous_traces, compression=True),
         rois=roi_table_region,
@@ -262,4 +262,5 @@ def add_ophys(scan_key, nwb, timestamps):
             plane_segmentation=plane_segmentation,
         )
         add_roi_response_series(field_key, nwb, plane_segmentation, timestamps)
+        add_deconvolved_roi_series(field_key, nwb, plane_segmentation, timestamps)
         add_summary_images(field_key, nwb)
