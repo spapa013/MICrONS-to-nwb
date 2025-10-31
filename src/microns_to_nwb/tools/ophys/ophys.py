@@ -112,7 +112,7 @@ def add_functional_coregistration_to_plane_segmentation(
     plane_segmentation.add_column(
         name="cave_ids",
         description=f"The identifier(s) in CAVE for field {field_key['field']}.",
-        data=subset_df.id.tolist(),
+        data=np.expand_dims(subset_df.id.tolist(), 1).tolist(), # cave_ids should be shape (n x 1)
         index=True,
     )
 
