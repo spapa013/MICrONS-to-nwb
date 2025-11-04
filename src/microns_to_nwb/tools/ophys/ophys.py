@@ -166,6 +166,7 @@ def _get_fluorescence(nwb, fluorescence_name):
 
 def add_roi_response_series(field_key, nwb, plane_segmentation, timestamps):
     # add Fluorescence traces
+    # ordering by unit_id and mask_id give the same result but using unit_id for consistency
     traces_for_each_mask = (nda.Fluorescence * nda.ScanUnit.proj('field', 'mask_id') & field_key).fetch("trace", order_by="unit_id")
     continuous_traces = np.vstack(traces_for_each_mask).T
 
@@ -195,6 +196,8 @@ def add_deconvolved_roi_series(
     Store deconvolved per-ROI activity as a RoiResponseSeries linked to the same ROIs
     as Fluorescence. This mirrors your Fluorescence storage pattern.
     """
+    # add Deconvolved Activity traces
+    # ordering by unit_id and mask_id give the same result but using unit_id for consistency
     traces_for_each_mask = (nda.Activity * nda.ScanUnit.proj('field', 'mask_id') & field_key).fetch("trace", order_by="unit_id")
     continuous_traces = np.vstack(traces_for_each_mask).T
 
