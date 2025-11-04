@@ -31,6 +31,7 @@ def convert_session(
     stimulus_movie_file_path: str,
     dandiset_id: str = None,
     verbose: bool = True,
+    cleanup: bool = False,
 ):
     """Wrap converter for parallel execution."""
 
@@ -140,10 +141,19 @@ def convert_session(
         except Exception as e:
             warn(f"There was an error during upload to DANDI.  The source files are not removed.  The full traceback:{e}")
 
-    if verbose:
-        print("Cleaning up ...")
-    Path(ophys_file_path).unlink()
-    Path(stimulus_movie_file_path).unlink()
+    if cleanup:
+        if verbose:
+            print("Cleaning up ...")
+        # Only remove source files when explicitly requested. Be tolerant if files
+        # are already missing (e.g., by prior runs).
+        try:
+            Path(ophys_file_path).unlink()
+        except FileNotFoundError:
+            warn(f"Tried to remove ophys file but it was not found: {ophys_file_path}")
+        try:
+            Path(stimulus_movie_file_path).unlink()
+        except FileNotFoundError:
+            warn(f"Tried to remove stimulus movie file but it was not found: {stimulus_movie_file_path}")
 
     
 
@@ -154,6 +164,7 @@ def parallel_convert_sessions(
     stimulus_movie_file_paths: list,
     dandiset_id: str = None,
     verbose = False,
+    cleanup: bool = False,
     ):
     with ProcessPoolExecutor(max_workers=num_parallel_jobs) as executor:
         with tqdm(total=len(ophys_file_paths), position=0, leave=False) as progress_bar:
@@ -169,8 +180,9 @@ def parallel_convert_sessions(
                         nwbfile_path=str(nwbfile_path),
                         ophys_file_path=str(ophys_file_path),
                         stimulus_movie_file_path=str(stimulus_movie_file_path),
-                        dandiset_id = None,
-                        verbose = verbose,
+                        dandiset_id=dandiset_id,
+                        verbose=verbose,
+                        cleanup=cleanup,
                     )
                 )
             for future in as_completed(futures):
